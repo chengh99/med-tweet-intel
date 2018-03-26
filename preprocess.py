@@ -13,10 +13,16 @@ Requirements:
     - depends on API access modules rest.py and streaming.py
 """
 
+<<<<<<< HEAD
+import re
+import sys
+import rest
+=======
 import sys
 import rest
 import streaming
 import database
+>>>>>>> d35fa9551f078f664be8bcf67c122bbbcb250775
 import logging
 import json
 import datetime
@@ -35,6 +41,126 @@ from pprint import pprint
 EST = timezone("EST")
 
 #
+<<<<<<< HEAD
+# Helper Functions
+#
+# Hashtags
+hash_regex = re.compile(r"#(\w+)")
+def hash_repl(match):
+	return '__HASH_'+match.group(1).upper()
+
+# Handels
+hndl_regex = re.compile(r"@(\w+)")
+def hndl_repl(match):
+	return '__HNDL'#_'+match.group(1).upper()
+
+# URLs
+url_regex = re.compile(r"(http|https|ftp)://[a-zA-Z0-9\./]+")
+
+# Spliting by word boundaries
+word_bound_regex = re.compile(r"\W+")
+
+# Repeating words like hurrrryyyyyy
+rpt_regex = re.compile(r"(.)\1{1,}", re.IGNORECASE);
+def rpt_repl(match):
+	return match.group(1)+match.group(1)
+
+# Emoticons
+emoticons = \
+	[	('__EMOT_SMILEY',	[':-)', ':)', '(:', '(-:', ] )	,\
+		('__EMOT_LAUGH',		[':-D', ':D', 'X-D', 'XD', 'xD', ] )	,\
+		('__EMOT_LOVE',		['<3', ':\*', ] )	,\
+		('__EMOT_WINK',		[';-)', ';)', ';-D', ';D', '(;', '(-;', ] )	,\
+		('__EMOT_FROWN',		[':-(', ':(', '(:', '(-:', ] )	,\
+		('__EMOT_CRY',		[':,(', ':\'(', ':"(', ':(('] )	,\
+	]
+
+# Punctuations
+punctuations = \
+	[	#('',		['.', ] )	,\
+		#('',		[',', ] )	,\
+		#('',		['\'', '\"', ] )	,\
+		('__PUNC_EXCL',		['!', '¡', ] )	,\
+		('__PUNC_QUES',		['?', '¿', ] )	,\
+		('__PUNC_ELLP',		['...', '…', ] )	,\
+		#FIXME : MORE? http://en.wikipedia.org/wiki/Punctuation
+	]
+
+def print_config(cfg):
+    for (x, arr) in cfg:
+        print(x, '\t')
+        for a in arr:
+            print(a, '\t')
+        print('')
+
+def print_emoticons():
+	print_config(emoticons)
+
+def print_punctuations():
+	print_config(punctuations)
+
+#For emoticon regexes
+def escape_paren(arr):
+	return [text.replace(')', '[)}\]]').replace('(', '[({\[]') for text in arr]
+
+def regex_union(arr):
+	return '(' + '|'.join( arr ) + ')'
+
+emoticons_regex = [ (repl, re.compile(regex_union(escape_paren(regx))) ) \
+					for (repl, regx) in emoticons ]
+
+#For punctuation replacement
+def punctuations_repl(match):
+	text = match.group(0)
+	repl = []
+	for (key, parr) in punctuations :
+		for punc in parr :
+			if punc in text:
+				repl.append(key)
+	if( len(repl)>0 ) :
+		return ' '+' '.join(repl)+' '
+	else :
+		return ' '
+
+def processHashtags(text, subject='', query=[]):
+	return re.sub( hash_regex, hash_repl, text )
+
+def processHandles(text, subject='', query=[]):
+	return re.sub( hndl_regex, hndl_repl, text )
+
+def processUrls(text, subject='', query=[]):
+	return re.sub( url_regex, ' __URL ', text )
+
+def processEmoticons(text, subject='', query=[]):
+	for (repl, regx) in emoticons_regex :
+		text = re.sub(regx, ' '+repl+' ', text)
+	return text
+
+def processPunctuations( text, subject='', query=[]):
+	return re.sub( word_bound_regex , punctuations_repl, text )
+
+def processRepeatings( 	text, subject='', query=[]):
+	return re.sub( rpt_regex, rpt_repl, text )
+
+def processQueryTerm( 	text, subject='', query=[]):
+	query_regex = "|".join([ re.escape(q) for q in query])
+	return re.sub( query_regex, '__QUER', text, flags=re.IGNORECASE )
+
+def countHandles(text):
+	return len( re.findall( hndl_regex, text) )
+
+def countHashtags(text):
+	return len( re.findall( hash_regex, text) )
+
+def countUrls(text):
+	return len( re.findall( url_regex, text) )
+
+def countEmoticons(text):
+	count = 0
+	for (repl, regx) in emoticons_regex :
+		count += len( re.findall( regx, text) )
+	return count
+=======
 # Setup
 #
 
@@ -81,6 +207,7 @@ def dehydrate(filename="data/dehydrated_tweet_ids.txt"):
 # Helper Functions
 #
 
+>>>>>>> d35fa9551f078f664be8bcf67c122bbbcb250775
 
 def print_tweet(tweet):
     """
@@ -97,6 +224,8 @@ def print_notice(notice):
     """
     logging.error(u"{0}".format(notice))
 
+<<<<<<< HEAD
+=======
 #
 # Examples
 #
@@ -511,6 +640,7 @@ def export_retweet_text(n=50):
             tweet_text = database.Tweet.get(id=k).text
             f.write("{0},{1}\n".format(
                 tweet_text.replace("\n", "<newline>"), v))
+>>>>>>> d35fa9551f078f664be8bcf67c122bbbcb250775
 
 def porter_stemming(raw_word):
     """
@@ -529,7 +659,30 @@ def wordnet_lemm(raw_word):
     after_word = wordnet_lemmatizer.lemmatize(raw_word)
     return after_word
 
+<<<<<<< HEAD
+def cleanse_sentence(text):
+    """
+    Cleansing tweet text (sentence) and remove hashtag, handle and url 
+    Replace emotions with clear text
+    """
     
+    text = re.sub(hash_regex, hash_repl, text)
+    text = re.sub(hndl_regex, hndl_repl, text)
+    text = re.sub(url_regex, ' __URL ', text)
+    
+    for (repl, regx) in emoticons_regex :
+        text = re.sub(regx, ' '+repl+' ', text)
+
+    text = text.replace('\'','')
+    text = re.sub( word_bound_regex , punctuations_repl, text )
+    text = re.sub( rpt_regex, rpt_repl, text )
+    
+    return text
+
+
+=======
+    
+>>>>>>> d35fa9551f078f664be8bcf67c122bbbcb250775
 def filter_stop_words(processed_word_list, current_tweet_text):
     """
     Remove stopwords so we have concentrated keywords to analyze
@@ -548,7 +701,11 @@ def filter_stop_words(processed_word_list, current_tweet_text):
             processed_word_list.append(word_lemm)
     return processed_word_list
 
+<<<<<<< HEAD
+def plot_tweets_by_wordlist(filtered_word_list, bCumulative):
+=======
 def plot_tweets_by_wordlist(filtered_word_list):
+>>>>>>> d35fa9551f078f664be8bcf67c122bbbcb250775
     """
     Show frequency of all words in a given tweet text
     """
@@ -556,7 +713,11 @@ def plot_tweets_by_wordlist(filtered_word_list):
 
     for key,val in freq.items():
         print (str(key) + ':' + str(val))
+<<<<<<< HEAD
+    freq.plot(50, cumulative = bCumulative)
+=======
     freq.plot(50, cumulative=False)
+>>>>>>> d35fa9551f078f664be8bcf67c122bbbcb250775
 
 # Main
 def main():
@@ -566,10 +727,20 @@ def main():
     for page in archive:
         for tweet in page:
             # print_tweet(tweet)
+<<<<<<< HEAD
+            cur_text = tweet["text"]
+            # print(u"{0}: {1}".format(tweet["user"]["screen_name"], cur_text))
+            # print("Length of the tweets: ", len(cur_text))
+            cur_text = cleanse_sentence(cur_text)
+            print(u"{0}: {1}".format(tweet["user"]["screen_name"], cur_text))
+            processed_word_list = filter_stop_words(processed_word_list, cur_text)
+            plot_tweets_by_wordlist(processed_word_list, True)
+=======
             print(u"{0}: {1}".format(tweet["user"]["screen_name"], tweet["text"]))
             print("Length of the tweets: ", len(tweet["text"]))
             processed_word_list = filter_stop_words(processed_word_list, tweet["text"])
             plot_tweets_by_wordlist(processed_word_list)
+>>>>>>> d35fa9551f078f664be8bcf67c122bbbcb250775
         break
 
 main()
