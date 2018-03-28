@@ -16,8 +16,6 @@ Requirements:
 import re
 import sys
 import rest
-import sys
-import rest
 import streaming
 import database
 import logging
@@ -40,6 +38,7 @@ EST = timezone("EST")
 #
 # Helper Functions
 #
+
 # Hashtags
 hash_regex = re.compile(r"#(\w+)")
 def hash_repl(match):
@@ -669,7 +668,6 @@ def cleanse_sentence(text):
     text = re.sub( rpt_regex, rpt_repl, text )
     
     return text
-
 
 def filter_stop_words(processed_word_list, current_tweet_text):
     """
