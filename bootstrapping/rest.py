@@ -147,7 +147,7 @@ def search_tweets(query, **kwargs):
     :returns: tuple (result object, list of tweets, search metadata)
     """
     # Set number of fetched tweets to the given amount, else to 200
-    kwargs['count'] = kwargs.get('count', 200)
+    kwargs['count'] = kwargs.get('count', 1000)
     # Set the query parameter
     kwargs['q'] = query
     result = throttled_call(SEARCH_URL, params=kwargs)
@@ -166,7 +166,7 @@ def fetch_user_tweets(user, **kwargs):
     :returns: tuple (result object, list of tweets)
     """
     # Set number of fetched tweets to the given amount, else to 200
-    kwargs['count'] = kwargs.get('count', 200)
+    kwargs['count'] = kwargs.get('count', 1000)
     # Is the user parameter an integer number, ergo an user ID?
     if isinstance(user, int):
         kwargs['user_id'] = user
