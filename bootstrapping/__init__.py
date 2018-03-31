@@ -156,49 +156,6 @@ def countEmoticons(text):
 		count += len( re.findall( regx, text) )
 	return count
 
-#    
-# Setup
-#
-
-def hydrate(idlist_file="data/example_dataset_tweet_ids.txt"):
-    """
-    This function reads a file with tweet IDs and then loads them
-    through the API into the database. Prepare to wait quite a bit,
-    depending on the size of the dataset.
-    """
-    ids_to_fetch = set()
-    for line in open(idlist_file, "r"):
-        # Remove newline character through .strip()
-        # Convert to int since that's what the database uses
-        ids_to_fetch.add(int(line.strip()))
-    # Find a list of Tweets that we already have
-    ids_in_db = set(t.id for t in database.Tweet.select(database.Tweet.id))
-    # Sets have an efficient .difference() method that returns IDs only present
-    # in the first set, but not in the second.
-    ids_to_fetch = ids_to_fetch.difference(ids_in_db)
-    logging.warning(
-        "\nLoaded a list of {0} tweet IDs to hydrate".format(len(ids_to_fetch)))
-
-    # Set up a progressbar
-    bar = Bar('Fetching tweets', max=len(ids_to_fetch), suffix='%(eta)ds')
-    for page in rest.fetch_tweet_list(ids_to_fetch):
-        bar.next(len(page))
-        for tweet in page:
-            database.create_tweet_from_dict(tweet)
-    bar.finish()
-    logging.warning("Done hydrating!")
-
-
-def dehydrate(filename="data/dehydrated_tweet_ids.txt"):
-    """
-    This function writes the Tweet IDs contained in the current database to
-    a file that allows re-hydration with the above method.
-    """
-    with open(filename, "w") as f:
-        for tweet in database.Tweet.select(database.Tweet.id):
-            f.write("{0}\n".format(tweet.id))
-
-
 #
 # Helper Functions
 #
@@ -235,12 +192,16 @@ def wordnet_lemm(raw_word):
     after_word = wordnet_lemmatizer.lemmatize(raw_word)
     return after_word
 
-def cleanse_sentence(text):
+def cleanse_sentence( text, subject='', query=[] ):
     """
     Cleansing tweet text (sentence) and remove hashtag, handle and url 
     Replace emotions with clear text
     """
     
+    if(len(query)>0):
+        query_regex = "|".join([ re.escape(q) for q in query])
+        text = re.sub( query_regex, '__QUER', text, flags=re.IGNORECASE )
+
     text = re.sub(hash_regex, hash_repl, text)
     text = re.sub(hndl_regex, hndl_repl, text)
     text = re.sub(url_regex, ' __URL ', text)
@@ -254,6 +215,7 @@ def cleanse_sentence(text):
     
     return text
 
+# TODO: Consider move it to Feature Extraction package
 def filter_stop_words(processed_word_list, current_tweet_text):
     """
     Remove stopwords so we have concentrated keywords to analyze
@@ -272,6 +234,7 @@ def filter_stop_words(processed_word_list, current_tweet_text):
             processed_word_list.append(word_lemm)
     return processed_word_list
 
+# TODO: Move it to Util package
 def plot_tweets_by_wordlist(filtered_word_list, bCumulative):
     """
     Show frequency of all words in a given tweet text
@@ -282,10 +245,16 @@ def plot_tweets_by_wordlist(filtered_word_list, bCumulative):
         print (str(key) + ':' + str(val))
     freq.plot(50, cumulative = bCumulative)
 
-# Main
-def main():
-    archive = rest.fetch_user_archive(sys.argv[1])
+def process_tweets_by_user(tweetUser, output_name):
+    """
+    Use my twitter API access to fetch tweets by user passed as tweetUser
+    """
+    # Initialize counters for output purpose
+    cntOfTweets = 0
+    save_to_file = open(output_name, 'w')
     processed_word_list = []
+
+    archive = rest.fetch_user_archive(tweetUser, count=1000)
 
     for page in archive:
         for tweet in page:
@@ -293,9 +262,28 @@ def main():
             cur_text = tweet["text"]
             # print(u"{0}: {1}".format(tweet["user"]["screen_name"], cur_text))
             # print("Length of the tweets: ", len(cur_text))
+
+            # cur_text = cleanse_sentence(cur_text, subject='', query=[])
             cur_text = cleanse_sentence(cur_text)
+
+            cntOfTweets = cntOfTweets + 1
+            # newLine = ('%s,%d,%s\n'), tweetUser, cntOfTweets, cur_text)
+            newLine = "{0},{1:d},{2}\n".format(tweetUser, cntOfTweets, cur_text)
+            save_to_file.write(newLine)
+
             processed_word_list = filter_stop_words(processed_word_list, cur_text)
-            plot_tweets_by_wordlist(processed_word_list, True)
+            # plot_tweets_by_wordlist(processed_word_list, True)
         break
 
-main()
+    save_to_file.close()
+
+# Sample main() method
+# Will be invoked in the med-tweet-intel main program
+if __name__ == '__main__':
+    if (len(sys.argv) != 3) :
+        print('Usage: python __init__.py <Tweet_Subject> <Output_File csv>')
+        # raise ValueError('Missing parameters. tweet subject and output file are required')
+        exit()
+    
+    process_tweets_by_user(sys.argv[1], sys.argv[2])
+   
