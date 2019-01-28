@@ -1,7 +1,0 @@
-# Keyfile holding your twitter API keys
-# Keep this file secret, don't add it to version control or put it in any public place!
-
-client_key: 'NzZ4PpfyAJrUKGZwdPmKgMBMr'
-client_secret: 'yGi8nvNdTu7RaCozs16PaqV4zIjja9IsufbeoiUo3AMI314NV7'
-resource_owner_key: '13830512-ot7Zqk1p9zYEur55C1Et5EUHApIiDlqeQxPd4IsR3'
-resource_owner_secret: 'TMydyUGgw4mCZHIGhryrqUtcP2tLk990vTyvXoWIr3ZAD'
